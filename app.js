@@ -1,76 +1,90 @@
 import {render, html, svg} from 'https://cdn.skypack.dev/uhtml/async'
 import { Product } from './Product.js'
+import { metrics } from './metrics.js'
 
 const response = await fetch("data.json")
 const { products: productsData } = await response.json()
 const originalProducts = Object.values(productsData).map(productData => new Product(productData))
 
-const metrics = {
-    absoluteProfit: { value: 0, sort: true, filter: true },
-    instantVsOrderRatio: { value: 0, sort: true, filter: true  }
-}
-
 const processProducts = () => {
     let processedProducts = [...originalProducts]
 
-    for (const [name, { value, filter} ] of Object.entries(metrics)) {
-        if (filter) {
-            processedProducts = processedProducts.filter(product => {
-                return product[name] > value
-            })
-        }
+    for (const [name, { filterValue, filter} ] of Object.entries(metrics)) {
+        processedProducts = processedProducts.filter(product => {
+            return product[name] > filterValue
+        })
+
+        metrics[name].min = Math.min(...originalProducts.map(product => product[name]))
+        metrics[name].max = Math.max(...originalProducts.map(product => product[name]))
     }
 
     // TODO multi dimension sort.
-    for (const [name, { value, sort} ] of Object.entries(metrics)) {
-        if (sort) {
-            processedProducts.sort((a, b) => b[name] - a[name])
-        }
+    for (const [name, { sort } ] of Object.entries(metrics)) {
+        processedProducts.sort((a, b) => b[name] - a[name])
     }
     
     return processedProducts
 }
 
-const draw = (products) => {
+const sliderChange = (name, type) => event => {
+    metrics[name][type + 'Value'] = parseFloat(event.target.value)
+    draw(processProducts())
+}
 
-    const form = (products) => {
+const form = () => {
 
-        const onchange = name => event => {
-            metrics[name].value = parseFloat(event.target.value)
-            draw(processProducts())
-        }
-
-        return Object.entries(metrics).map(([ name, { value } ]) => html`
-            <input 
-                type="range" 
-                .value=${value} 
-                onchange=${onchange(name)} 
-                min=${Math.min(...originalProducts.map(product => product[name]))} 
-                max=${Math.max(...originalProducts.map(product => product[name]))}
-            >
-        `)
-    }
+    return Object.entries(metrics).map(([ name, { filterValue, sortValue, label, min, max } ]) => html`
+        <div class="slider">
+        <label>${label}</label>
     
-    const table = (products) => {
-        return html`
-        <table>
-            <thead>
-                <th>
-                    <td>Product</td>
-                </th>
-            </thead>
-            <tbody>
-                ${products.map(product => html`
-                    <tr>
-                        <td>
-                            ${product.name}
-                        </td>
-                    </tr>
-                `)}    
-            </tbody>
-        </table>
-        `
-    }
+        <input 
+            type="range" 
+            .value=${filterValue} 
+            onchange=${sliderChange(name, 'filter')} 
+            min=${min} 
+            max=${max}
+        >
+
+        </div>
+
+        <div class="slider">
+        <label>${label}</label>
+    
+        <input 
+            type="range" 
+            .value=${sortValue} 
+            onchange=${sliderChange(name, 'sort')} 
+            min=${min} 
+            max=${max}
+        >
+
+        </div>
+    `)
+}
+
+const table = (products) => {
+    return html`
+    <table>
+        <thead>
+            <th>
+                <td>Product</td>
+            </th>
+        </thead>
+        <tbody>
+            ${products.map(product => html`
+                <tr>
+                    <td>
+                        ${product.name}
+                    </td>
+                </tr>
+            `)}    
+        </tbody>
+    </table>
+    `
+}
+
+
+const draw = (products) => {
 
     render(document.body, html`
 
