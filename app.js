@@ -63,7 +63,7 @@ const form = () => {
 const table = (products) => {
     return html`
         ${products.map(product => html`
-            <div data-total=${product.totalWeighted}>
+            <div>
             ${product.name}
             </div>
         `)}    
