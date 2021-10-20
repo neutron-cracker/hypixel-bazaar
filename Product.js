@@ -20,16 +20,18 @@ export class Product {
         return this.sellVolume / this.buyOrders * (this.buyVolume / this.sellOrders)
     }
 
-    // get totalWeighted () {
-    //     instantVsOrderWeighted * sliderwok + absoluteProfitWeighted * slider
-    // }
+    get totalWeighted () {
+        return Object.keys(metrics).reduce((total, currentMetricKey) => {
+            return total + this[currentMetricKey + 'Weighted'] * metrics[currentMetricKey].sortValue
+        }, 0)
+    }
 }
 
-for (const [name, metric] of Object.entries(metrics)) {
-    Object.defineProperty(Product.prototype, name + 'Weighted', {
+for (const metric of Object.keys(metrics)) {
+    Object.defineProperty(Product.prototype, metric + 'Weighted', {
         get () {
-            const normalizedTotal = metrics[name].max - metrics[name].min
-            const normalizedValue = this[name] - metrics[name].min
+            const normalizedTotal = metrics[metric].max - metrics[metric].min
+            const normalizedValue = this[metric] - metrics[metric].min
             return normalizedValue / normalizedTotal
         }
     })

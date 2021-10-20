@@ -18,10 +18,7 @@ const processProducts = () => {
         metrics[name].max = Math.max(...originalProducts.map(product => product[name]))
     }
 
-    // TODO multi dimension sort.
-    for (const [name, { sort } ] of Object.entries(metrics)) {
-        processedProducts.sort((a, b) => b[name] - a[name])
-    }
+    processedProducts.sort((a, b) => b.totalWeighted - a.totalWeighted)
     
     return processedProducts
 }
@@ -48,14 +45,15 @@ const form = () => {
         </div>
 
         <div class="slider">
-        <label>${label}</label>
+        <label>${label} weight</label>
     
         <input 
             type="range" 
             .value=${sortValue} 
             onchange=${sliderChange(name, 'sort')} 
-            min=${min} 
-            max=${max}
+            min="0.001"
+            max="1"
+            step="0.001"
         >
 
         </div>
@@ -64,22 +62,11 @@ const form = () => {
 
 const table = (products) => {
     return html`
-    <table>
-        <thead>
-            <th>
-                <td>Product</td>
-            </th>
-        </thead>
-        <tbody>
-            ${products.map(product => html`
-                <tr>
-                    <td>
-                        ${product.name}
-                    </td>
-                </tr>
-            `)}    
-        </tbody>
-    </table>
+        ${products.map(product => html`
+            <div data-total=${product.totalWeighted}>
+            ${product.name}
+            </div>
+        `)}    
     `
 }
 
